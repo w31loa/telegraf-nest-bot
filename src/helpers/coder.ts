@@ -29,7 +29,7 @@ export function coder(pass){
      */
     function core_sha1(x, len)
     {
-      /* append padding */
+      
       x[len >> 5] |= 0x80 << (24 - len % 32);
       x[((len + 64 >> 9) << 4) + 15] = len;
     
