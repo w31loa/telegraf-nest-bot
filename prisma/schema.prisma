@@ -42,8 +42,8 @@ model Mark {
 
   mark String
 
-  subject Subject @relation(fields: [sunjectId] , references: [id])
-  sunjectId Int
+  subject Subject @relation(fields: [subjectId] , references: [id])
+  subjectId Int
 
 
 }

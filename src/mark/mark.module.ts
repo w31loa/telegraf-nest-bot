@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
 import { MarkService } from './mark.service';
+import { MarkController } from './mark.controller';
+import { PrismaModule } from 'src/prisma/prisma.module';
+import { SubjectModule } from 'src/subject/subject.module';
 
 @Module({
-  providers: [MarkService]
+  imports: [PrismaModule, SubjectModule],
+  providers: [MarkService],
+  controllers: [MarkController]
 })
 export class MarkModule {}
