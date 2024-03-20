@@ -34,4 +34,13 @@ export class MarkService {
         return await this.prisma.mark.createMany({data})
         return data
     }
+
+    async getAllMarksBySubjectId( subjectId){
+        return await this.prisma.mark.findMany({
+            where:{
+                subjectId
+                
+            }
+        })
+    }
 }

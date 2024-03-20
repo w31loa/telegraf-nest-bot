@@ -7,6 +7,7 @@ import { SubjectModule } from 'src/subject/subject.module';
 @Module({
   imports: [PrismaModule, SubjectModule],
   providers: [MarkService],
-  controllers: [MarkController]
+  controllers: [MarkController],
+  exports: [MarkService]
 })
 export class MarkModule {}
