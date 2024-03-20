@@ -1,9 +1,10 @@
-import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { Observable, catchError, map , of} from 'rxjs';
 import * as qs from 'qs'
 import {JSDOM} from 'jsdom'
 import {getAllMarks} from '../helpers/parser'
+import { HttpService } from '@nestjs/axios';
+import { IAllMarks } from 'src/types/types';
 
 
 interface loginData  {
@@ -13,8 +14,8 @@ interface loginData  {
 
 
 @Injectable()
-export class MarksService {
-    private readonly logger = new Logger(MarksService.name)
+export class ApiService {
+    private readonly logger = new Logger(ApiService.name)
     private loginUrl
     private marksUrl
 
@@ -29,7 +30,7 @@ export class MarksService {
         })
     }
 
-    async generateResponse(loginData:loginData):Promise<any>{
+    async generateResponse(loginData:loginData):Promise<IAllMarks[]>{
 
         const options = {
             headers: { 'content-type': 'application/x-www-form-urlencoded' }
@@ -71,19 +72,14 @@ export class MarksService {
                         });
                       }
                      return  readStream().then(html=>{
-                            // console.log(html)
-                            const dom = new JSDOM(html)
-                            const document = dom.window.document
-                            
-                            if(document.querySelector('tbody')){
-                            return getAllMarks(document) 
-                            // console.log(data['Иностранный язык'])
+                         const dom = new JSDOM(html)
+                         const document = dom.window.document
+                         
+                      
+                                return  getAllMarks(document) 
                             
         
-                            }else{
-                                throw new Error('Введены неправильные данные или сервак лёг)')
-                            }
-                            
+                         
                            
                          
                       })
@@ -93,6 +89,7 @@ export class MarksService {
             .then(data=> {
                 return data
             })
+            // console.log(marks)
             return marks
         
         }
