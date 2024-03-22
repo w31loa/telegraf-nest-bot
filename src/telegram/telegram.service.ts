@@ -1,36 +1,48 @@
 import { ConfigService } from '@nestjs/config';
-import { Ctx, Start, Update ,On ,Message, Action, Hears} from "nestjs-telegraf";
+import { Ctx, Start, Update ,On ,Message, Action, Hears, Command} from "nestjs-telegraf";
 import { ApiService } from 'src/api/api.service';
 import {Markup, Scenes, Telegraf} from 'telegraf'
-import { getKeyboardWithSubjects } from './talagram.halper';
+import { getKeyboardWithMarks, getKeyboardWithSubjects } from './talagram.keyboard';
 import { MarkService } from 'src/mark/mark.service';
 import { IMark } from 'src/types/types';
+import { SubjectService } from 'src/subject/subject.service';
+import { SceneContext, Stage } from 'telegraf/typings/scenes';
+import { LoginScene } from './scenes/login.scene';
+import { User } from '@prisma/client';
 
 type Context = Scenes.SceneContext
 
 
 @Update()
-export class TelegramService extends Telegraf<Context>{
+export class TelegramService extends Telegraf<Context> {
 
   data = [
     {
-      "id": 1,
+      "id": 3,
       "title": "Иностранный язык",
       "userId": 1
     },
     {
-      "id": 2,
+      "id": 4,
       "title": "Программирование",
       "userId": 1
     }
   ]
 
-    constructor(private readonly configService:ConfigService, private readonly marksService:ApiService , private readonly mark:MarkService ){
-        super(configService.get('TELEGRAM_KEY'))
+    constructor(private readonly configService:ConfigService, 
+                private readonly marksService:ApiService ,
+                private readonly mark:MarkService,
+                private readonly subject: SubjectService,
+                private readonly loginScene: LoginScene ){
+        super(configService.get('TELEGRAM_KEY'))  
+        
     }
+
+    // stage = new Stage(this.loginScene)
 
     @Start()
     onStart(@Ctx() ctx:Context){ 
+          
          ctx.replyWithHTML(`<b>Привет, ${ctx.from.first_name}</b>`)
          ctx.state
     }
@@ -45,14 +57,24 @@ export class TelegramService extends Telegraf<Context>{
     //   )
     // }
     @On('sticker')
-    onStiker(@Message('stiker') message,@Ctx() ctx:Context){
-      ctx.reply('крсава', {
-        reply_markup:{
-          inline_keyboard: [
-            getKeyboardWithSubjects(this.data)
-          ],
+    async onStiker(@Message('stiker') message,@Ctx() ctx:Context){
+         //@ts-ignore
+        const user = ctx.session.user as User
+        if(user){
+          const subjects = await this.subject.getAllSubjectsByUserId(+user.id)
+
+
+          ctx.reply('крсава', {
+            reply_markup:{
+              inline_keyboard: 
+                getKeyboardWithSubjects(subjects)
+              ,
+            }
+          })
         }
-      })
+        else{
+          ctx.reply('Авторизуйся друг❤')
+        }
       
     }
 
@@ -64,19 +86,69 @@ export class TelegramService extends Telegraf<Context>{
     ]).resize() ) 
     }
 
+    @Hears('Логин')
+    async callLoginScene(@Ctx() ctx:SceneContext){
+        ctx.scene.enter('login')
+        return
+
+    }
+
     @On('callback_query')
     async sda( @Ctx() ctx:Context){
       //@ts-ignore
-      const data:IMark[] = await this.mark.getAllMarksBySubjectId(+ctx.callbackQuery.data) 
-      
-      const marks = data.filter(el=> el.mark!='')
+      const callback = {
+          //@ts-ignore
+          type: ctx.callbackQuery.data.split('_')[0],
+          //@ts-ignore
+          id: ctx.callbackQuery.data.split('_')[1]
+      }
+      //@ts-ignore
 
-      // ctx.replyWithHTML(`${marks.map(el=> ` 🤓${el.mark}  📅 ${el.date}\t \n`)}` , {parse_mode:'MarkdownV2'})
-      ctx.replyWithHTML('``` one          1      \ntwo          2      three        3      ```' , {parse_mode:'MarkdownV2'})
-      // ctx.answerCbQuery(`оценка:22 дата:11`, {show_alert: true})
-      // console.log(ctx.callbackQuery.data)
-      console.log(marks)
+      console.log(ctx.callbackQuery.data)
+
+      if(callback.type == 'subjectId'){
+        const subjectId = +callback.id
+
+        const marks:IMark[] = await this.mark.getAllMarksBySubjectId(subjectId) 
+    
+  
+        const subject = await this.subject.getSubjectById(subjectId)
+  
+  
+        // ctx.replyWithHTML(`${marks.map(el=> ` 🤓${el.mark}  📅 ${el.date}\t \n`)}` , {parse_mode:'MarkdownV2'})
+  
+        // let table = '```🤓Оценки\n| ✅Оценка | 📅Дата |\n'
+  
+        // marks.forEach(el=>{
+        //   table+= `|     ${el.mark}     |   ${el.date.length<5?el.date+' ': el.date}  |\n`
+        // })
+        // table+='```'
+        // let table = '```🤓Оценки\n✅Оценка       📅Дата\n'
+  
+        // marks.forEach(el=>{
+        //   table+= `     ${el.mark}           ${el.date}      \n`
+        // })
+        // table+='```'
+     
+  
+  
+        // ctx.replyWithHTML('```🤓Оценки\n✅Оценка       📅Дата\n     5           11.12      \n     5           11.12      \n     5           11.12      \n```' , {parse_mode:'MarkdownV2'})
+        // ctx.replyWithHTML(table , {parse_mode:'MarkdownV2'})
+        ctx.reply(subject.title, {
+          reply_markup:{
+        //@ts-ignore
+            inline_keyboard: 
+              getKeyboardWithMarks(marks)
+            ,
+          }
+        })
+        // ctx.replyWithHTML(table , {parse_mode:'HTML'})
+   
+        // console.log(ctx.callbackQuery.data)
+      }
+ 
     }
+
 
     @Action('callback_query')
     async onAction(@Ctx() ctx:Context ){

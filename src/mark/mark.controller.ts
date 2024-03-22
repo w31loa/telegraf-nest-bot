@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { IAllMarks } from 'src/types/types';
 import { MarkService } from './mark.service';
 
@@ -1278,9 +1278,12 @@ export class MarkController {
         
     ]
 
-    @Get()
-    adas(){
+    @Post()
+    crete(){
         return this.marks.create({marks: this.data , userId: 1})
     }
-
+    @Get()
+    adas(){
+        return this.marks.getAllMarksBySubjectId(3)
+    }
 }

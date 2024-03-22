@@ -9,11 +9,23 @@ export class UserService {
 
 
     async createUser(user: CreateUserDto){
+
+            const userExist = await this.prisma.user.findFirst({
+                where:{
+                    username: user.username
+                }
+            })
+
+            if(userExist){
+                return userExist
+            }
+
             const newuser = await this.prisma.user.create({data: user })
 
 
             return newuser
     }
+
 
 
     async login(user: CreateUserDto){
@@ -25,7 +37,7 @@ export class UserService {
         }) 
 
         if(!userExist){
-            return 'нет такого юзера'
+            return false
         }
 
 

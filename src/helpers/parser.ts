@@ -27,12 +27,10 @@ export function getAllMarks(document){
 
      function getMarks(dateList, subjectsList){
         let marksList = []
-        let allMarks = {}
         let allMarks2: IAllMarks[] = [] 
     
         subjectsList.forEach(el=>{
-            allMarks[el]=[]
-            allMarks2.push({subjectName: '', marks: [{mark: '' , date: ''}]})
+            allMarks2.push({subjectName: '', marks: []})
         })
         for(let i = 1 ; i<=subjectsList.length ; i++){
             allMarks2[i-1].subjectName= subjectsList[i-1]
@@ -50,17 +48,20 @@ export function getAllMarks(document){
             //     allMarks[subjectsList[i-1]].push({date:dateList[k] , mark:marksList[k]})
             // }
             for(let k in dateList){
-                allMarks2[i-1].marks.push({date:dateList[k] , mark:marksList[k]})
+                if(marksList[k]!=''){
+                    allMarks2[i-1].marks.push({date:dateList[k] , mark:marksList[k]})   
+                }
             }
-            
             
         }
         // console.log(allMarks2)
         return allMarks2
     }
     // console.log(getMarks(getDateList(), getSubjectsList()))
-    return getMarks(getDateList(), getSubjectsList())
-    // return 
+    const allMarks =  getMarks(getDateList(), getSubjectsList())
+
+
+    return allMarks
 } 
  
   
