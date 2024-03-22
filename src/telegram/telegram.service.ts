@@ -43,20 +43,23 @@ export class TelegramService extends Telegraf<Context> {
     @Start()
     onStart(@Ctx() ctx:Context){ 
           
-         ctx.replyWithHTML(`<b>Привет, ${ctx.from.first_name}</b>`)
+        ctx.replyWithHTML('Привет, это бот для просмотра за своей успеваемость прямо в Телеграм!\n <i>Для начала нажми кнопку логин😉</i>', Markup.keyboard([
+            ['Логин', 'Список предметов'],
+            ['Обновить оценки']
+        ]).resize() ) 
          ctx.state
     }
     // @On('sticker')
     // onStiker(@Message('stiker') message,@Ctx() ctx:Context){
     //   ctx.replyWithHTML(`              Выберите предмет             `, Markup.inlineKeyboard([
-    //       Markup.button.callback("Русский", 'lesson1'),
+    //       Markup.button.callback("Русский", 'lesson1'), 
     //       Markup.button.callback('Математика', 'lesson2'),
     //       Markup.button.callback('МДК', 'lesson3'),
-    //       Markup.button.callback('Англиский', 'lesson4'),
+    //       Markup.button.callback('Англиский', 'lesson4'), 
     //     ])
     //   )
-    // }
-    @On('sticker')
+    // }  
+    @On('sticker') 
     async onStiker(@Message('stiker') message,@Ctx() ctx:Context){
          //@ts-ignore
         const user = ctx.session.user as User
@@ -78,18 +81,36 @@ export class TelegramService extends Telegraf<Context> {
       
     }
 
-    @Hears('/key')
-    async onHears(@Ctx() ctx: Context) {
-      ctx.replyWithHTML('Привет', Markup.keyboard([
-        ['Логин', 'Перезагрузить список оценок'],
-        ['Выход']
-    ]).resize() ) 
-    }
+    // @Hears('/key')
+    // async onHears(@Ctx() ctx: Context) {
+   
+    // }
 
     @Hears('Логин')
     async callLoginScene(@Ctx() ctx:SceneContext){
         ctx.scene.enter('login')
         return
+
+    }
+    @Hears('Список предметов')
+    async getSubjects(@Ctx() ctx:SceneContext){
+          //@ts-ignore
+          const user = ctx.session.user as User
+          if(user){
+            const subjects = await this.subject.getAllSubjectsByUserId(+user.id)
+  
+  
+            ctx.replyWithHTML('📚 <u>Список предметов</u> 📚', {
+              reply_markup:{
+                inline_keyboard: 
+                  getKeyboardWithSubjects(subjects)
+                ,
+              }
+            })
+          }
+          else{
+            ctx.reply('Авторизуйся друг❤')
+          }
 
     }
 

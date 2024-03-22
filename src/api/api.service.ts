@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { Observable, catchError, map , of} from 'rxjs';
 import * as qs from 'qs'
 import {JSDOM} from 'jsdom'
@@ -16,7 +16,7 @@ interface loginData  {
 
 @Injectable()
 export class ApiService {
-    private readonly logger = new Logger(ApiService.name)
+    // private readonly logger = new Logger(ApiService.name)
     private loginUrl
     private marksUrl
 
@@ -29,7 +29,7 @@ export class ApiService {
         return this.htppService.axiosRef.get('https://stackoverflow.com/questions/69139950/how-to-use-axios-httpservice-from-nest-js-to-make-a-post-request').then(data=>{
             return data.data
         })
-    }
+    } 
 
     async generateResponse(loginData:loginData):Promise<IAllMarks[]>{
 
@@ -43,8 +43,9 @@ export class ApiService {
         const marks = await  this.htppService.axiosRef.post(this.loginUrl, data, options)
             .then((res)=>res.headers['set-cookie'])
             .then(cookieArr=> {
-                console.log(123)
-          
+                if(!cookieArr){
+                    throw new HttpException('Ошибка входа', HttpStatus.BAD_REQUEST)
+                }
                 let cookieStr = ''
                 cookieArr.forEach(el => {
                 

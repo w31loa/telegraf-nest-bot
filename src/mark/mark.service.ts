@@ -1296,15 +1296,17 @@ export class MarkService {
             const subjectId = subjects.filter(el=> el.title == subject.subjectName)
            subject.subjectName = String(subjectId[0].id)
            subject.marks.forEach(el=>{
-                data.push({subjectId: subjectId[0].id , mark: el.mark , date: el.date})
+                data.push({subjectId: subjectId[0].id , mark: el.mark?el.mark:'' , date: el.date})
            })
         })
 
 
         
-        
+        // return data
         return await this.prisma.mark.createMany({data})
     }
+
+
 
     async getAllMarksBySubjectId( subjectId){
         return await this.prisma.mark.findMany({

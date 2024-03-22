@@ -55,6 +55,7 @@ export function getAllMarks(document){
             
         }
         // console.log(allMarks2)
+        process.stdout.write(JSON.stringify(allMarks2) + '\n');
         return allMarks2
     }
     // console.log(getMarks(getDateList(), getSubjectsList()))
