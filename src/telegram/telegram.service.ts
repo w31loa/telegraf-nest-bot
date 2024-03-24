@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
-import { Ctx, Start, Update ,On ,Message, Action, Hears, Command} from "nestjs-telegraf";
+import { Ctx, Start, Update ,On ,Message, Action, Hears, Command } from "nestjs-telegraf";
 import { ApiService } from 'src/api/api.service';
-import {Markup, Scenes, Telegraf} from 'telegraf'
+import {Markup, Scenes, Telegraf } from 'telegraf'
 import { getKeyboardWithMarks, getKeyboardWithSubjects } from './talagram.keyboard';
 import { MarkService } from 'src/mark/mark.service';
 import { IMark } from 'src/types/types';
@@ -9,6 +9,11 @@ import { SubjectService } from 'src/subject/subject.service';
 import { SceneContext, Stage } from 'telegraf/typings/scenes';
 import { LoginScene } from './scenes/login.scene';
 import { User } from '@prisma/client';
+import { getMarksTable } from './helpers/table.helper';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import * as fs from 'fs'
+import * as path from 'path';
+
 
 type Context = Scenes.SceneContext
 
@@ -16,48 +21,29 @@ type Context = Scenes.SceneContext
 @Update()
 export class TelegramService extends Telegraf<Context> {
 
-  data = [
-    {
-      "id": 3,
-      "title": "Иностранный язык",
-      "userId": 1
-    },
-    {
-      "id": 4,
-      "title": "Программирование",
-      "userId": 1
-    }
-  ]
-
     constructor(private readonly configService:ConfigService, 
                 private readonly marksService:ApiService ,
                 private readonly mark:MarkService,
                 private readonly subject: SubjectService,
+                private readonly api: ApiService,
                 private readonly loginScene: LoginScene ){
         super(configService.get('TELEGRAM_KEY'))  
-        
     }
 
-    // stage = new Stage(this.loginScene)
+
+    private subjectMessage
 
     @Start()
     onStart(@Ctx() ctx:Context){ 
           
-        ctx.replyWithHTML('Привет, это бот для просмотра своей успеваемости прямо в Телеграм!\n <i>Для начала нажми кнопку логин😉</i>', Markup.keyboard([
+        ctx.replyWithHTML('Привет, это бот для отслеживания своей успеваемости прямо в Телеграм!\n <i>Для начала нажми кнопку логин😉</i>', Markup.keyboard([
             ['🔐 Логин'],
         ]).resize() ) 
          ctx.state
     }
-    // @On('sticker')
-    // onStiker(@Message('stiker') message,@Ctx() ctx:Context){
-    //   ctx.replyWithHTML(`              Выберите предмет             `, Markup.inlineKeyboard([
-    //       Markup.button.callback("Русский", 'lesson1'), 
-    //       Markup.button.callback('Математика', 'lesson2'),
-    //       Markup.button.callback('МДК', 'lesson3'),
-    //       Markup.button.callback('Англиский', 'lesson4'), 
-    //     ])
-    //   )
-    // }  
+
+
+
     @On('sticker') 
     async onStiker(@Message('stiker') message,@Ctx() ctx:Context){
          //@ts-ignore
@@ -80,20 +66,37 @@ export class TelegramService extends Telegraf<Context> {
       
     }
 
-    // @Hears('/key')
-    // async onHears(@Ctx() ctx: Context) {
-   
-    // }
-
     @Hears('🔐 Логин')
     async callLoginScene(@Ctx() ctx:SceneContext){
         ctx.scene.enter('login')
         return
 
     }
-    @Hears('Обновить данные')
+
+    @Hears('🚪 Выйти')
+    async exit(@Ctx() ctx:SceneContext){
+      
+        return this.onStart(ctx)
+
+    }
+
+    @Hears('♻ Обновить данные')
     async marksUpdate(@Ctx() ctx:SceneContext){
-        // ctx.scene.enter('login')
+          //@ts-ignore
+          const user = ctx.session.user as User
+          if(user){
+            const message = await ctx.reply('Загрузка данных, пожалуйста подождите....')
+            const data = await this.api.generateResponse({username: user.username , userpass: user.password})
+            if(data[0] !=undefined){
+              await this.subject.reloadSubjects({marks:data , userId: user.id})
+               await this.mark.reloadMarks({marks:data , userId: user.id})
+              ctx.telegram.editMessageText(message.chat.id, message.message_id , undefined, 'Готово✅ \n '  ).then(()=>{
+                  ctx.replyWithHTML('Теперь можете оценить свои успехи в учебе😉')
+              })
+            }
+          }else{
+            ctx.reply('Авторизуйся друг❤')
+          }
         return
 
     }
@@ -105,7 +108,7 @@ export class TelegramService extends Telegraf<Context> {
             const subjects = await this.subject.getAllSubjectsByUserId(+user.id)
   
   
-            ctx.replyWithHTML('📚 <u>Список предметов</u> 📚', {
+           this.subjectMessage = await ctx.replyWithHTML('📚 <u>Список предметов</u> 📚', {
               reply_markup:{
                 inline_keyboard: 
                   getKeyboardWithSubjects(subjects)
@@ -133,73 +136,56 @@ export class TelegramService extends Telegraf<Context> {
       console.log(ctx.callbackQuery.data)
 
       if(callback.type == 'subjectId'){
+
+        // ctx.deleteMessage(this.subjectMessage.)
+
         const subjectId = +callback.id
 
         const marks:IMark[] = await this.mark.getAllMarksBySubjectId(subjectId) 
     
-  
         const subject = await this.subject.getSubjectById(subjectId)
   
-  
-        // ctx.replyWithHTML(`${marks.map(el=> ` 🤓${el.mark}  📅 ${el.date}\t \n`)}` , {parse_mode:'MarkdownV2'})
-  
-        // let table = '```🤓Оценки\n| ✅Оценка | 📅Дата |\n'
-  
-        // marks.forEach(el=>{
-        //   table+= `|     ${el.mark}     |   ${el.date.length<5?el.date+' ': el.date}  |\n`
-        // })
-        // table+='```'
-        // let table = '```🤓Оценки\n✅Оценка       📅Дата\n'
-  
-        // marks.forEach(el=>{
-        //   table+= `     ${el.mark}           ${el.date}      \n`
-        // })
-        // table+='```'
-     
-  
-  
-        // ctx.replyWithHTML('```🤓Оценки\n✅Оценка       📅Дата\n     5           11.12      \n     5           11.12      \n     5           11.12      \n```' , {parse_mode:'MarkdownV2'})
-        // ctx.replyWithHTML(table , {parse_mode:'MarkdownV2'})
-        ctx.reply(subject.title, {
+        ctx.replyWithHTML(`<b>${subject.title}</b>`, {
           reply_markup:{
         //@ts-ignore
             inline_keyboard: 
-              getKeyboardWithMarks(marks)
+              getKeyboardWithMarks(marks , +subjectId)
             ,
           }
         })
-        // ctx.replyWithHTML(table , {parse_mode:'HTML'})
-   
-        // console.log(ctx.callbackQuery.data)
       }
+
+      if(callback.type == 'table'){
+        const subjectId = +callback.id
+
+        const marks:IMark[] = await this.mark.getAllMarksBySubjectId(subjectId) 
+        const subject = await this.subject.getSubjectById(subjectId)
+        // ctx.reply(`${subjectId}`)
+
+        const table = getMarksTable(marks , subject.title)
+
+        ctx.replyWithHTML(table , {parse_mode:'MarkdownV2'})
+      }
+
  
     }
 
-
-    @Action('callback_query')
-    async onAction(@Ctx() ctx:Context ){
-      // this.marksService.generateResponse({'username': "BARANNIKAP" , 'userpass': `1dbf71922928df9ce9e0e8303bb2c84f02184f8e`}).then(data=>{
-      //   // console.log(data['Иностранный язык'])
-
-      //   const replyStr:string = `${data['Иностранный язык'][13].date}: ${data['Иностранный язык'][13].mark}`
-      //   ctx.replyWithHTML(replyStr)
-        console.log(123)
-      // })
-
+    @Cron(CronExpression.EVERY_10_SECONDS, {timeZone: 'Europe/Moscow'})
+    automaticlyUpdate(){
+      console.log(123)
     }
 
-    // @On('text')
-    // async onMessage(@Message('text') message : string, @Ctx() ctx:Context){
-    //     // const marks = await 
-    //   this.marksService.generateResponse({'username': "BARANNIKAP" , 'userpass': `1dbf71922928df9ce9e0e8303bb2c84f02184f8e`}).then(data=>{
-    //     console.log(data['Иностранный язык'])
 
-    //     const replyStr:string = `${data['Иностранный язык'][13].date}: ${data['Иностранный язык'][13].mark}`
-    //     ctx.replyWithHTML(replyStr)
-        
-    //   })
-        // this.marksService.test().then(data=>{
-        //     console.log(data)
-        // })
-    // }
+
+    @Hears('Z')
+    async rossia(@Ctx() ctx:Context){
+      const filepath = path.resolve(process.cwd(),'z.mp3')
+      ctx.replyWithAudio({source: filepath})
+    }
+
+    @On('message')
+    async onMessage(@Message('text') message : string, @Ctx() ctx:Context){
+        // const marks = await 
+       await ctx.replyWithHTML('🚨 Нет такой команды 🚨')
+    }
 }

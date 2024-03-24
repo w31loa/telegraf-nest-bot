@@ -42,7 +42,7 @@ model Mark {
 
   mark String
 
-  subject Subject @relation(fields: [subjectId] , references: [id])
+  subject Subject @relation(fields: [subjectId] , references: [id] , onDelete: Cascade)
   subjectId Int
 
 

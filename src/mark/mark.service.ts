@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SubjectService } from 'src/subject/subject.service';
 import { IAllMarks } from 'src/types/types';
@@ -1306,6 +1307,20 @@ export class MarkService {
         return await this.prisma.mark.createMany({data})
     }
 
+
+    async reloadMarks({marks, userId}:Params){
+        await this.prisma.mark.deleteMany({
+            where:{
+                subject:{
+                    userId
+                }
+            }
+        })
+
+        return await this.create({marks, userId})
+    }
+
+  
 
 
     async getAllMarksBySubjectId( subjectId){

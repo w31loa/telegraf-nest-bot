@@ -26,6 +26,20 @@ export class SubjectService {
         })
     }
 
+    
+    async reloadSubjects({marks, userId}:Params){
+
+        await this.prisma.subject.deleteMany({
+            where:{
+                userId
+            }
+        })
+
+        return await this.createAllSubjectsForUser({marks, userId})
+
+    }
+
+
     async getSubjectById(id){
         return await this.prisma.subject.findUnique({
             where:{

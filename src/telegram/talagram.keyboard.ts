@@ -19,7 +19,7 @@ export const getKeyboardWithSubjects = (data:ISubject[])=>{
 
     const format = (data:ISubject)=>{
         
-        return [{ text: data.title, callback_data: `subjectId_${data.id}` }]
+        return [{ text: `${data.title}`, callback_data: `subjectId_${data.id}` }]
     }
     
     const markup:unknown = data.map(el=> format(el) )
@@ -29,19 +29,20 @@ export const getKeyboardWithSubjects = (data:ISubject[])=>{
     // console.log(markup)
     return markup as InlineKeyboardButton[][]
 }
-export const getKeyboardWithMarks = (data:IMark[])=>{
+export const getKeyboardWithMarks = (data:IMark[] , subjectId:number)=>{
 
     const format = (data:IMark)=>{
         
         return [{ text: data.mark, callback_data: data.date } , { text: data.date, callback_data: data.date }]
     }
-	let markup: unknown[] = [[{ text:'✅Оценка' , callback_data: 'd' } , { text: '📅Дата', callback_data: ' a'}]]
+	let markup: unknown[] = [[{ text:'💯 Оценка' , callback_data: 'd' } , { text: '📅 Дата', callback_data: ' a'}]]
     
     data.map(el=> markup.push(format(el))  )
     
     // [{ text: "hello", callback_data: "hello" }] 
     // Markup.inlineKeyboard(markup)
 	// console.log(markup)
+    markup.push([{ text: "📋 Вывести в виде таблицы", callback_data: `table_${subjectId}`}])
     return markup as InlineKeyboardButton[]
 }
 

@@ -1,11 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { Ctx, On, Scene, SceneEnter } from "nestjs-telegraf";
+import { Ctx, Hears, On, Scene, SceneEnter } from "nestjs-telegraf";
 import { ApiService } from "src/api/api.service";
 import { MarkService } from "src/mark/mark.service";
 import { SubjectService } from "src/subject/subject.service";
 import { UserService } from "src/user/user.service";
 import { Markup } from "telegraf";
-import { SceneContext } from "telegraf/typings/scenes";
+import { SceneContext  } from "telegraf/typings/scenes";
+import { TelegramService } from "../telegram.service";
 
 
 @Injectable()
@@ -19,7 +20,18 @@ export class LoginScene{
 
     @SceneEnter()
     async loginEnter(@Ctx() ctx:SceneContext){
-        await ctx.replyWithHTML('<u>Введите логин и пароль</u> ✏ (Используйте данные из электронного журнала в формате "логин пароль")')
+        await ctx.replyWithHTML('<u>Введите логин и пароль</u> ✏ (Используйте данные из электронного журнала в формате "логин пароль")', Markup.keyboard([
+            ['🚪 Выйти'],
+        ]).resize())
+    }
+    @Hears('🚪 Выйти')
+    async exit(@Ctx() ctx:SceneContext){
+      
+        await ctx.scene.leave()
+         ctx.replyWithHTML('Привет, это бот для отслеживания своей успеваемости прямо в Телеграм!\n <i>Для начала нажми кнопку логин😉</i>', Markup.keyboard([
+            ['🔐 Логин'],
+        ]).resize() ) 
+
     }
 
     @On('text')
@@ -53,7 +65,11 @@ export class LoginScene{
                 const subjects =  await this.subject.createAllSubjectsForUser({marks:data , userId: newUser.id})
                 const userMarks = await this.mark.create({marks:data , userId: newUser.id})
                 ctx.telegram.editMessageText(message.chat.id, message.message_id , undefined, 'Готово✅ \n '  ).then(()=>{
-                    ctx.replyWithHTML('Теперь можете оценить свои успехи в учебе😉')
+                    ctx.replyWithHTML('Теперь можете оценить свои успехи в учебе😉', Markup.keyboard([
+                        ['📋 Список предметов'],
+                        ['♻ Обновить данные'],
+                        ['🚪 Выйти'],
+                    ]).resize())
                 })
                 
                 //@ts-ignore
@@ -80,14 +96,17 @@ export class LoginScene{
             ctx.reply('Готово✅').then(()=>{
                 ctx.replyWithHTML('Теперь можете оценить свои успехи в учебе😉', Markup.keyboard([
                     ['📋 Список предметов'],
-                    ['♻ Обновить данные']
+                    ['♻ Обновить данные'],
+                    ['🚪 Выйти'],
                 ]).resize())
-                
+                 
             })
             ctx.scene.leave()
 
         }
 
+
+    
 
         
         
@@ -97,6 +116,8 @@ export class LoginScene{
         console.log({data: ctx.session.user})   
 
     } 
+
+
 
   
 }
