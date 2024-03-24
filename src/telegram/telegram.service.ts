@@ -43,9 +43,8 @@ export class TelegramService extends Telegraf<Context> {
     @Start()
     onStart(@Ctx() ctx:Context){ 
           
-        ctx.replyWithHTML('Привет, это бот для просмотра за своей успеваемость прямо в Телеграм!\n <i>Для начала нажми кнопку логин😉</i>', Markup.keyboard([
-            ['Логин', 'Список предметов'],
-            ['Обновить оценки']
+        ctx.replyWithHTML('Привет, это бот для просмотра своей успеваемости прямо в Телеграм!\n <i>Для начала нажми кнопку логин😉</i>', Markup.keyboard([
+            ['🔐 Логин'],
         ]).resize() ) 
          ctx.state
     }
@@ -86,13 +85,19 @@ export class TelegramService extends Telegraf<Context> {
    
     // }
 
-    @Hears('Логин')
+    @Hears('🔐 Логин')
     async callLoginScene(@Ctx() ctx:SceneContext){
         ctx.scene.enter('login')
         return
 
     }
-    @Hears('Список предметов')
+    @Hears('Обновить данные')
+    async marksUpdate(@Ctx() ctx:SceneContext){
+        // ctx.scene.enter('login')
+        return
+
+    }
+    @Hears('📋 Список предметов')
     async getSubjects(@Ctx() ctx:SceneContext){
           //@ts-ignore
           const user = ctx.session.user as User

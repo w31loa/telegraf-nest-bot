@@ -4,6 +4,7 @@ import { ApiService } from "src/api/api.service";
 import { MarkService } from "src/mark/mark.service";
 import { SubjectService } from "src/subject/subject.service";
 import { UserService } from "src/user/user.service";
+import { Markup } from "telegraf";
 import { SceneContext } from "telegraf/typings/scenes";
 
 
@@ -51,7 +52,10 @@ export class LoginScene{
                 const newUser = await this.user.createUser({username: userData.login , password: userData.password})
                 const subjects =  await this.subject.createAllSubjectsForUser({marks:data , userId: newUser.id})
                 const userMarks = await this.mark.create({marks:data , userId: newUser.id})
-                ctx.telegram.editMessageText(message.chat.id, message.message_id , undefined, 'Успех✅'  )
+                ctx.telegram.editMessageText(message.chat.id, message.message_id , undefined, 'Готово✅ \n '  ).then(()=>{
+                    ctx.replyWithHTML('Теперь можете оценить свои успехи в учебе😉')
+                })
+                
                 //@ts-ignore
                 ctx.session.user = {
                     id: newUser.id,
@@ -73,7 +77,13 @@ export class LoginScene{
                 username: user.username,
                 password: user.password
             }
-            ctx.reply('Успех✅')
+            ctx.reply('Готово✅').then(()=>{
+                ctx.replyWithHTML('Теперь можете оценить свои успехи в учебе😉', Markup.keyboard([
+                    ['📋 Список предметов'],
+                    ['♻ Обновить данные']
+                ]).resize())
+                
+            })
             ctx.scene.leave()
 
         }
