@@ -44,27 +44,27 @@ export class TelegramService extends Telegraf<Context> {
 
 
 
-    @On('sticker') 
-    async onStiker(@Message('stiker') message,@Ctx() ctx:Context){
-         //@ts-ignore
-        const user = ctx.session.user as User
-        if(user){
-          const subjects = await this.subject.getAllSubjectsByUserId(+user.id)
+    // @On('sticker') 
+    // async onStiker(@Message('stiker') message,@Ctx() ctx:Context){
+    //      //@ts-ignore
+    //     const user = ctx.session.user as User
+    //     if(user){
+    //       const subjects = await this.subject.getAllSubjectsByUserId(+user.id)
 
 
-          ctx.reply('крсава', {
-            reply_markup:{
-              inline_keyboard: 
-                getKeyboardWithSubjects(subjects)
-              ,
-            }
-          })
-        }
-        else{
-          ctx.reply('Авторизуйся друг❤')
-        }
+    //       ctx.reply('крсава', {
+    //         reply_markup:{
+    //           inline_keyboard: 
+    //             getKeyboardWithSubjects(subjects)
+    //           ,
+    //         }
+    //       })
+    //     }
+    //     else{
+    //       ctx.reply('Авторизуйся друг❤')
+    //     }
       
-    }
+    // }
 
     @Hears('🔐 Логин')
     async callLoginScene(@Ctx() ctx:SceneContext){
@@ -108,13 +108,14 @@ export class TelegramService extends Telegraf<Context> {
             const subjects = await this.subject.getAllSubjectsByUserId(+user.id)
   
   
-           this.subjectMessage = await ctx.replyWithHTML('📚 <u>Список предметов</u> 📚', {
+            this.subjectMessage  = await ctx.replyWithHTML('📚 <u>Список предметов</u> 📚', {
               reply_markup:{
                 inline_keyboard: 
                   getKeyboardWithSubjects(subjects)
                 ,
               }
             })
+            console.log( this.subjectMessage)
           }
           else{
             ctx.reply('Авторизуйся друг❤')
@@ -133,11 +134,12 @@ export class TelegramService extends Telegraf<Context> {
       }
       //@ts-ignore
 
-      console.log(ctx.callbackQuery.data)
+      // console.log(ctx.callbackQuery.data)
 
       if(callback.type == 'subjectId'){
 
-        // ctx.deleteMessage(this.subjectMessage.)
+        // console.log()
+        ctx.deleteMessage(this.subjectMessage.message_id)
 
         const subjectId = +callback.id
 
@@ -170,9 +172,18 @@ export class TelegramService extends Telegraf<Context> {
  
     }
 
-    @Cron(CronExpression.EVERY_10_SECONDS, {timeZone: 'Europe/Moscow'})
-    automaticlyUpdate(){
-      console.log(123)
+    @Cron(CronExpression.EVERY_12_HOURS, {timeZone: 'Europe/Moscow'})
+    async automaticlyUpdate(){
+         //@ts-ignore
+         const user = ctx.session.user as User
+         if(user){
+           const data = await this.api.generateResponse({username: user.username , userpass: user.password})
+           if(data[0] !=undefined){
+             await this.subject.reloadSubjects({marks:data , userId: user.id})
+              await this.mark.reloadMarks({marks:data , userId: user.id})
+            console.log(`data for user ${user.id} updated`)
+           }
+         }
     }
 
 

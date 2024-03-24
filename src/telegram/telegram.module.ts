@@ -7,10 +7,12 @@ import { MarkModule } from 'src/mark/mark.module';
 import { SubjectModule } from 'src/subject/subject.module';
 import { LoginScene } from './scenes/login.scene';
 import { UserModule } from 'src/user/user.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     TelegrafModule.forRootAsync(options()),
+    ScheduleModule.forRoot(),
     ApiModule,
     MarkModule,
     SubjectModule,
