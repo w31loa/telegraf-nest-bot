@@ -28,7 +28,7 @@ model Subject{
     title String
 
 
-    user User @relation(fields: [userId] , references: [id])
+    user User @relation(fields: [userId] , references: [id] , onDelete: Cascade)
     userId Int
 
 

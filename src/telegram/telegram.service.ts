@@ -191,6 +191,7 @@ export class TelegramService extends Telegraf<Context> {
     @Hears('Z')
     async rossia(@Ctx() ctx:Context){
       const filepath = path.resolve(process.cwd(),'z.mp3')
+      ctx.reply('🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺🇷🇺')
       ctx.replyWithAudio({source: filepath})
     }
 
@@ -199,4 +200,4 @@ export class TelegramService extends Telegraf<Context> {
         // const marks = await 
        await ctx.replyWithHTML('🚨 Нет такой команды 🚨')
     }
-}
+} 
